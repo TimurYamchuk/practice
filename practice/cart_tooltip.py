@@ -14,9 +14,7 @@ public class CartApp extends JFrame {
         setSize(400, 200);
         setLayout(new FlowLayout());
 
-        // створюємо список товарів
         cartItems = new ArrayList<>();
-        // приклад заповнення (можна закоментувати для тесту порожнього кошика)
         cartItems.add(new Item("Ноутбук", 3, 700));
         cartItems.add(new Item("Мишка", 2, 100));
         cartItems.add(new Item("Клавіатура", 2, 200));
@@ -26,7 +24,6 @@ public class CartApp extends JFrame {
 
         updateToolTip();
 
-        // дія при натисканні
         cartButton.addActionListener(e -> showCartInfo());
 
         setVisible(true);
