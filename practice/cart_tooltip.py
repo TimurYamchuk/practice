@@ -1,69 +1,93 @@
-import tkinter as tk
-from tkinter import messagebox
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.List;
 
-class ToolTip:
-    """Проста підказка для кнопки"""
-    def __init__(self, widget, text_func):
-        self.widget = widget
-        self.text_func = text_func
-        self.tip_window = None
-        self.widget.bind("<Enter>", self.show_tip)
-        self.widget.bind("<Leave>", self.hide_tip)
+public class CartApp extends JFrame {
+    private JButton cartButton;
+    private List<Item> cartItems;
 
-    def show_tip(self, event=None):
-        text = self.text_func()
-        if self.tip_window or not text:
-            return
-        x, y, cx, cy = self.widget.bbox("insert")  # координати курсора
-        x += self.widget.winfo_rootx() + 25
-        y += self.widget.winfo_rooty() + 25
-        self.tip_window = tw = tk.Toplevel(self.widget)
-        tw.wm_overrideredirect(True)  # прибрати рамку
-        tw.wm_geometry(f"+{x}+{y}")
-        label = tk.Label(tw, text=text, justify='left',
-                         background="#ffffe0", relief='solid', borderwidth=1,
-                         font=("tahoma", "10", "normal"))
-        label.pack(ipadx=5, ipady=3)
+    public CartApp() {
+        super("Магазин");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(400, 200);
+        setLayout(new FlowLayout());
 
-    def hide_tip(self, event=None):
-        tw = self.tip_window
-        self.tip_window = None
-        if tw:
-            tw.destroy()
+        // створюємо список товарів
+        cartItems = new ArrayList<>();
+        // приклад заповнення (можна закоментувати для тесту порожнього кошика)
+        cartItems.add(new Item("Ноутбук", 3, 700));
+        cartItems.add(new Item("Мишка", 2, 100));
+        cartItems.add(new Item("Клавіатура", 2, 200));
 
+        cartButton = new JButton("🛒 Кошик");
+        add(cartButton);
 
-class ShoppingCartApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Магазин")
+        updateToolTip();
 
-        # Дані кошика: список кортежів (назва, ціна)
-        self.cart_items = [("Товар1", 500), ("Товар2", 300), ("Товар3", 600)]  # можна змінювати
-        # self.cart_items = []  # перевірка порожнього кошика
+        // дія при натисканні
+        cartButton.addActionListener(e -> showCartInfo());
 
-        self.cart_button = tk.Button(root, text="Кошик", command=self.checkout)
-        self.cart_button.pack(padx=50, pady=50)
+        setVisible(true);
+    }
 
-        # Підказка
-        ToolTip(self.cart_button, self.get_cart_tooltip)
+    private void updateToolTip() {
+        if (cartItems.isEmpty()) {
+            cartButton.setToolTipText("У кошику немає товарів");
+        } else {
+            int positions = cartItems.size();
+            int totalCount = cartItems.stream().mapToInt(Item::getQuantity).sum();
+            double totalSum = cartItems.stream().mapToDouble(Item::getTotalPrice).sum();
 
-    def get_cart_tooltip(self):
-        if not self.cart_items:
-            return "У кошику немає товарів"
-        count = len(self.cart_items)
-        total = sum(item[1] for item in self.cart_items)
-        return f"У вашому кошику позицій - {count} товарів\nНа загальну суму {total}\n(натисніть для оформлення)"
+            cartButton.setToolTipText(
+                    String.format("<html>У вашому кошику позицій - %d<br>"
+                            + "товарів - %d<br>"
+                            + "на загальну суму %.2f грн<br>"
+                            + "(натисніть для оформлення)</html>",
+                            positions, totalCount, totalSum)
+            );
+        }
+    }
 
-    def checkout(self):
-        if not self.cart_items:
-            messagebox.showinfo("Кошик", "У кошику немає товарів")
-        else:
-            count = len(self.cart_items)
-            total = sum(item[1] for item in self.cart_items)
-            messagebox.showinfo("Оформлення", f"Ви оформляєте {count} товарів на суму {total} грн")
+    private void showCartInfo() {
+        if (cartItems.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "У кошику немає товарів");
+        } else {
+            StringBuilder sb = new StringBuilder("Ваш кошик:\n");
+            for (Item item : cartItems) {
+                sb.append(String.format("%s — %d шт × %.2f грн = %.2f грн\n",
+                        item.getName(), item.getQuantity(), item.getPrice(), item.getTotalPrice()));
+            }
+            sb.append("\nЗагальна сума: ")
+              .append(cartItems.stream().mapToDouble(Item::getTotalPrice).sum())
+              .append(" грн");
+            JOptionPane.showMessageDialog(this, sb.toString());
+        }
+    }
 
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(CartApp::new);
+    }
+}
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ShoppingCartApp(root)
-    root.mainloop()
+// Клас товару (ОOП)
+class Item {
+    private String name;
+    private int quantity;
+    private double price;
+
+    public Item(String name, int quantity, double price) {
+        this.name = name;
+        this.quantity = quantity;
+        this.price = price;
+    }
+
+    public String getName() { return name; }
+    public int getQuantity() { return quantity; }
+    public double getPrice() { return price; }
+
+    public double getTotalPrice() {
+        return quantity * price;
+    }
+}
